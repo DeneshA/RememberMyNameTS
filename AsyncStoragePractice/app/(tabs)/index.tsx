@@ -1,98 +1,108 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import AsyncStronage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function App() {
 
-export default function HomeScreen() {
+  const [name, setName] = useState('');
+  const [savedName, setSavedName] = useState<string | null>(null);
+
+  // ✅ Load saved name on startup
+  useEffect(() => {
+    const loadName = async () => {
+      try {
+        const storedName = await AsyncStorage.getItem('username');
+        if (storedName) {
+          setSavedName(storedName);
+        }
+      } catch (error) {
+        console.error('Error loading name:', error);
+      }
+    };
+    loadName();
+  }, []);
+
+  // ✅ Save name to storage
+  const handleSave = async () => {
+    try {
+      if (name.trim() === '') {
+        Alert.alert('Please enter a name');
+        return;
+      }
+      await AsyncStronage.setItem('username', name);
+      setSavedName(name);
+      Alert.alert('Sucess!', 'Your name has been saved🥳');
+    } catch (error) {
+      console.error('Error saving name:', error);
+    }
+  };
+
+  // ✅ Clear saved name
+  const handleClear = async () => {
+    try {
+      await AsyncStronage.removeItem('username');
+      setSavedName(null);
+      setName('');
+      Alert.alert('Cleared!', 'Your name has been removed🗑️');
+    } catch (error) {
+      console.error('Error clearing name:', error);
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
+      <Text style={styles.title}>AsyncStorage Demo 💾</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {savedName ? (
+        <>
+        <Text style={styles.greeting}>Hello, {savedName}!</Text>
+        <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+          <Text style={styles.buttonText}>Clear Name</Text>
+        </TouchableOpacity> 
+        </>
+      ):(
+        <>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your name"
+          value={name}    
+          onChangeText={setName}
+        />
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.buttonText}>Save Name</Text>
+        </TouchableOpacity>
+        </>     
+      )}
+    </View>
   );
 }
-
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  input: {
+    width: '80%',
+    height: 45,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    backgroundColor: '#fff',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  saveButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  clearButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+    marginTop: 20,
   },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  greeting: { fontSize: 20, marginVertical: 10 },
 });
