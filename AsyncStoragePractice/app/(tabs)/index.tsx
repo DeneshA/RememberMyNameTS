@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import AsyncStronage from "@react-native-async-storage/async-storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
 
   const [name, setName] = useState('');
+  const [age, setAge] = useState('');
   const [savedName, setSavedName] = useState<string | null>(null);
+  const [savedAge, setSavedAge] = useState<string | null>(null);
+  const [darkMode,setDarkMode]=useState(false);
 
   // ✅ Load saved name on startup
   useEffect(() => {
     const loadName = async () => {
       try {
         const storedName = await AsyncStorage.getItem('username');
+        const storedAge = await AsyncStorage.getItem('userage');
         if (storedName) {
           setSavedName(storedName);
+        }
+        if (storedAge) {
+          setSavedAge(storedAge);
         }
       } catch (error) {
         console.error('Error loading name:', error);
@@ -29,10 +35,15 @@ export default function App() {
       if (name.trim() === '') {
         Alert.alert('Please enter a name');
         return;
+      } else if (age.trim() === '' || isNaN(Number(age))) {
+        Alert.alert('Please enter a valid age');
+        return;
       }
-      await AsyncStronage.setItem('username', name);
+      await AsyncStorage.setItem('username', name);
       setSavedName(name);
-      Alert.alert('Sucess!', 'Your name has been saved🥳');
+      await AsyncStorage.setItem('userage', age);
+      setSavedAge(age);
+      Alert.alert('Sucess!', 'Your name and age has been saved🥳');
     } catch (error) {
       console.error('Error saving name:', error);
     }
@@ -41,9 +52,12 @@ export default function App() {
   // ✅ Clear saved name
   const handleClear = async () => {
     try {
-      await AsyncStronage.removeItem('username');
+      await AsyncStorage.removeItem('username');
+      await AsyncStorage.removeItem('userage');
       setSavedName(null);
       setName('');
+      setSavedAge(null);
+      setAge('');
       Alert.alert('Cleared!', 'Your name has been removed🗑️');
     } catch (error) {
       console.error('Error clearing name:', error);
@@ -56,23 +70,28 @@ export default function App() {
 
       {savedName ? (
         <>
-        <Text style={styles.greeting}>Hello, {savedName}!</Text>
-        <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
-          <Text style={styles.buttonText}>Clear Name</Text>
-        </TouchableOpacity> 
+          <Text style={styles.greeting}>Hello, {savedName}! age ({savedAge}) </Text>
+          <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+            <Text style={styles.buttonText}>Clear Name</Text>
+          </TouchableOpacity>
         </>
-      ):(
+      ) : (
         <>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your name"
-          value={name}    
-          onChangeText={setName}
-        />
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.buttonText}>Save Name</Text>
-        </TouchableOpacity>
-        </>     
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your name"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your age"
+            value={age}
+            onChangeText={setAge}></TextInput>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.buttonText}>Save Name</Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
